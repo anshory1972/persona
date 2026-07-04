@@ -273,13 +273,13 @@ except ValueError:
     api_key = None
 
 if not api_key:
-    api_key = st.sidebar.text_input(
+    api_key = st.text_input(
         "Anthropic API key", type="password",
         help="Paste your API key here. It is never stored or logged.",
     )
 
 if api_key:
-    if st.sidebar.button("Verify key"):
+    if st.button("Verify key"):
         try:
             test_client = make_client(api_key)
             test_client.messages.create(
@@ -287,9 +287,9 @@ if api_key:
                 max_tokens=1,
                 messages=[{"role": "user", "content": "hi"}],
             )
-            st.sidebar.success("API key is valid and working.")
+            st.success("API key is valid and working.")
         except Exception as e:
-            st.sidebar.error(f"Key check failed: {e}")
+            st.error(f"Key check failed: {e}")
 
 # ── Hero ──────────────────────────────────────────────────────────────────────
 
