@@ -1,6 +1,5 @@
 """Streamlit app: synthetic persona survey responses for CVM (SB-DC/DB-DC) and
-DCE, grounded in real SUSENAS demographic data. See the project plan for the
-full design rationale.
+DCE, grounded in real SUSENAS demographic data.
 
 Run with: streamlit run app.py
 """
@@ -22,13 +21,51 @@ from dce import generate_dce_responses
 
 st.set_page_config(page_title="Synthetic Persona Survey Responses", layout="wide", page_icon="🗺️")
 
-def _logo_b64() -> str:
-    logo_path = Path(__file__).parent / "assets" / "logo.png"
-    if logo_path.exists():
-        return base64.b64encode(logo_path.read_bytes()).decode()
+# ── Asset helpers ─────────────────────────────────────────────────────────────
+
+def _img_b64(rel_path: str) -> str:
+    p = Path(__file__).parent / rel_path
+    if p.exists():
+        return base64.b64encode(p.read_bytes()).decode()
     return ""
 
-_LOGO = _logo_b64()
+_LOGO    = _img_b64("assets/logo.png")
+_DCESIM  = _img_b64("assets/toolbox_icons/dcesim.png")
+_CLOGIT  = _img_b64("assets/toolbox_icons/clogit.png")
+
+# SVG icon data-URIs for the three tools that use built-in Office imageMso.
+# Style matches the custom PNGs: rounded square, white symbol on color fill.
+def _svg_uri(svg: str) -> str:
+    return "data:image/svg+xml;base64," + base64.b64encode(svg.encode()).decode()
+
+_SVG_SBDC = _svg_uri(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+    '<rect width="32" height="32" rx="6" fill="#4A3D8F"/>'
+    '<text x="16" y="22" font-family="Georgia,serif" font-style="italic" font-size="17" '
+    'font-weight="bold" fill="white" text-anchor="middle">&#x192;x</text>'
+    '</svg>'
+)
+_SVG_DBDC = _svg_uri(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+    '<rect width="32" height="32" rx="6" fill="#1F7A5E"/>'
+    '<rect x="7" y="9" width="7" height="5" rx="1" fill="white"/>'
+    '<rect x="18" y="9" width="7" height="5" rx="1" fill="white"/>'
+    '<rect x="7" y="18" width="7" height="5" rx="1" fill="white"/>'
+    '<rect x="18" y="18" width="7" height="5" rx="1" fill="white"/>'
+    '</svg>'
+)
+_SVG_OADESIGN = _svg_uri(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+    '<rect width="32" height="32" rx="6" fill="#C07B1A"/>'
+    '<line x1="8" y1="12" x2="24" y2="12" stroke="white" stroke-width="1.5"/>'
+    '<line x1="8" y1="18" x2="24" y2="18" stroke="white" stroke-width="1.5"/>'
+    '<line x1="8" y1="24" x2="24" y2="24" stroke="white" stroke-width="1.5"/>'
+    '<line x1="14" y1="8" x2="14" y2="25" stroke="white" stroke-width="1.5"/>'
+    '<line x1="20" y1="8" x2="20" y2="25" stroke="white" stroke-width="1.5"/>'
+    '</svg>'
+)
+
+# ── Global styles ─────────────────────────────────────────────────────────────
 
 st.markdown(
     """
@@ -39,8 +76,6 @@ st.markdown(
       --spa-ink-muted: #5C6B7A;
       --spa-primary: #33547E;
       --spa-primary-deep: #223A56;
-      --spa-gold: #C08A2E;
-      --spa-gold-soft: #F6ECD9;
       --spa-line: #C9D3DE;
     }
 
@@ -48,8 +83,8 @@ st.markdown(
       background: var(--spa-surface-alt);
       border: 1px solid var(--spa-line);
       border-radius: 12px;
-      padding: 22px 26px 26px;
-      margin-bottom: 4px;
+      padding: 22px 26px 22px;
+      margin-bottom: 20px;
     }
     .spa-hero .eyebrow {
       font-family: Consolas, "SF Mono", monospace;
@@ -70,8 +105,45 @@ st.markdown(
       color: var(--spa-ink-muted);
       font-size: 15px;
       max-width: 76ch;
-      margin: 0;
+      margin: 0 0 16px;
       line-height: 1.5;
+    }
+    .spa-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--spa-line);
+      padding-top: 14px;
+    }
+    .spa-tools .label {
+      font-family: Consolas, "SF Mono", monospace;
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--spa-ink-muted);
+      margin-right: 4px;
+    }
+    .spa-tool {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: white;
+      border: 1px solid var(--spa-line);
+      border-radius: 8px;
+      padding: 5px 10px 5px 6px;
+    }
+    .spa-tool img {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      flex: none;
+    }
+    .spa-tool span {
+      font-size: 12px;
+      color: var(--spa-ink);
+      font-weight: 600;
+      white-space: nowrap;
     }
 
     .spa-step {
@@ -84,18 +156,43 @@ st.markdown(
       flex: none;
       width: 32px;
       height: 32px;
-      border-radius: 50%;
-      background: var(--spa-gold-soft);
-      color: var(--spa-primary-deep);
+      border-radius: 8px;
+      background: var(--spa-primary);
+      color: #fff;
       font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
       font-weight: 700;
       font-size: 15px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid var(--spa-gold);
     }
     .spa-step h2 {
+      font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--spa-ink);
+      margin: 0;
+    }
+
+    .spa-results-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 30px 0 2px;
+    }
+    .spa-results-header .check {
+      flex: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #19486A;
+      color: #fff;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .spa-results-header h2 {
       font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
       font-size: 1.3rem;
       font-weight: 700;
@@ -113,30 +210,11 @@ st.markdown(
       font-variant-numeric: tabular-nums;
       color: var(--spa-primary-deep);
     }
-
-    .stButton > button, .stDownloadButton > button {
-      border-radius: 8px;
-      border: 1px solid var(--spa-line);
-    }
-    [data-testid="stDataFrame"] {
-      border-radius: 8px;
-      border: 1px solid var(--spa-line);
-      overflow: hidden;
-    }
-    [data-testid="stExpander"] {
-      border: 1px solid var(--spa-line);
-      border-radius: 8px;
-    }
-    div[data-baseweb="textarea"], div[data-baseweb="input"], div[data-baseweb="select"] {
-      border-radius: 8px;
-    }
-    div[data-baseweb="textarea"] textarea, div[data-baseweb="input"] input {
-      border: 1px solid var(--spa-line) !important;
-    }
-    div[data-testid="stAlert"] {
-      border: 1px solid var(--spa-line);
-      border-radius: 8px;
-    }
+    .stButton > button, .stDownloadButton > button { border-radius: 8px; border: 1px solid var(--spa-line); }
+    [data-testid="stDataFrame"] { border-radius: 8px; border: 1px solid var(--spa-line); overflow: hidden; }
+    [data-testid="stExpander"] { border: 1px solid var(--spa-line); border-radius: 8px; }
+    div[data-baseweb="textarea"], div[data-baseweb="input"], div[data-baseweb="select"] { border-radius: 8px; }
+    div[data-testid="stAlert"] { border: 1px solid var(--spa-line); border-radius: 8px; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -145,54 +223,82 @@ st.markdown(
 
 def step_header(number, title):
     st.markdown(
-        f'<div class="spa-step"><div class="badge">{number}</div><h2>{title}</h2></div>',
+        f'<div class="spa-step">'
+        f'<div class="badge">{number}</div>'
+        f'<h2>{title}</h2></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def results_header():
+    st.markdown(
+        '<div class="spa-results-header">'
+        '<div class="check">&#10003;</div>'
+        '<h2>Results</h2></div>',
         unsafe_allow_html=True,
     )
 
 
 @st.cache_data
 def load_persona_base():
-    """Cached wrapper -- the underlying parquet read/decode only needs to run
-    once per server process, not on every rerun (Streamlit reruns the whole
-    script on every interaction)."""
     return _load_persona_base()
 
-# ── API key: auto-detect from secrets/environment, else ask inline ──────────
-# No sidebar and no seed control -- this app doesn't need replication control
-# for now, so sampling/generation use a fixed internal seed instead of a
-# user-facing input.
+
 SEED = 42
 
-api_key = None
 try:
     api_key = get_api_key(st.secrets)
 except ValueError:
     api_key = None
 
+# ── Hero ──────────────────────────────────────────────────────────────────────
+
+def _tool_badge(img_src: str, label: str) -> str:
+    return (
+        f'<div class="spa-tool">'
+        f'<img src="{img_src}" alt="{label}">'
+        f'<span>{label}</span>'
+        f'</div>'
+    )
+
 _logo_html = (
-    f'<div style="display:flex;align-items:center;gap:10px;flex-direction:row;">'
+    f'<div style="display:flex;align-items:center;gap:12px;">'
     f'<img src="data:image/png;base64,{_LOGO}" '
     f'alt="SDGs Center Universitas Padjadjaran" '
-    f'style="height:64px;width:64px;object-fit:contain;flex:none;">'
+    f'style="height:72px;width:72px;object-fit:contain;flex:none;">'
     f'<div style="font-family:\'Iowan Old Style\',\'Palatino Linotype\',Georgia,serif;'
-    f'line-height:1.25;text-align:left;">'
-    f'<div style="font-weight:700;font-size:13px;color:#1E2A3A;">SDGs Center</div>'
-    f'<div style="font-size:12px;color:#5C6B7A;">Universitas</div>'
-    f'<div style="font-size:12px;color:#5C6B7A;">Padjadjaran</div>'
+    f'line-height:1.3;text-align:left;">'
+    f'<div style="font-weight:700;font-size:17px;color:#1E2A3A;">SDGs Center</div>'
+    f'<div style="font-size:15px;color:#5C6B7A;">Universitas</div>'
+    f'<div style="font-size:15px;color:#5C6B7A;">Padjadjaran</div>'
     f'</div>'
     f'</div>'
     if _LOGO else ""
 )
+
+_tools_html = (
+    '<div class="spa-tools">'
+    '<span class="label">CVMToolbox &nbsp;&middot;&nbsp; Valuation Toolbox</span>'
+    + _tool_badge(_SVG_SBDC, "SB-DC")
+    + _tool_badge(_SVG_DBDC, "DB-DC")
+    + _tool_badge(_SVG_OADESIGN, "OA-Design")
+    + (_tool_badge(f"data:image/png;base64,{_DCESIM}", "DCE-DataSim") if _DCESIM else "")
+    + (_tool_badge(f"data:image/png;base64,{_CLOGIT}", "CLogit") if _CLOGIT else "")
+    + '</div>'
+)
+
 st.markdown(
     f"""
     <div class="spa-hero" style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;">
       <div style="flex:1;min-width:0;">
         <div class="eyebrow">SUSENAS &times; Claude &middot; synthpersona</div>
         <h1>Synthetic Persona Survey Responses</h1>
-        <p>Generate behaviorally plausible synthetic responses to CVM or DCE surveys, using
-        real SUSENAS-based Indonesian personas and Claude. Paste a design from CVMToolbox
-        (Excel add-in), or enter CVM bid levels directly &mdash; the output is shaped to
-        paste straight back into the toolbox.</p>
+        <p>Simulate how Indonesian households would respond to your CVM or DCE survey &mdash;
+        grounded in real SUSENAS microdata and powered by AI. Draw demographically
+        representative personas from any province or district, describe your scenario,
+        and receive a ready-to-analyse dataset of synthetic responses shaped to paste
+        directly into CVMToolbox.</p>
+        {_tools_html}
       </div>
       <div style="flex:none;display:flex;align-items:center;padding-top:4px;">
         {_logo_html}
@@ -201,13 +307,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-if not api_key:
-    api_key = st.text_input(
-        "Anthropic API key", type="password",
-        help="Never stored or logged. Set ANTHROPIC_API_KEY in the environment or "
-             ".streamlit/secrets.toml to skip this field.",
-    )
 
 # ── Step 1: method selection ──────────────────────────────────────────────────
 step_header(1, "Survey method")
@@ -258,23 +357,20 @@ elif method.startswith("DB-DC"):
 
 else:  # DCE
     st.caption(
-        "Paste OA-Design's Table 2 'Raw Alternatives' (recommended -- parsed deterministically, no API "
-        "call needed) or Table 4 'Questionnaire' cards (parsed via Claude, shown below for confirmation)."
+        "Paste OA-Design's Table 2 'Raw Alternatives' (recommended) or "
+        "Table 4 'Questionnaire' cards. The parsed design will be shown below for confirmation."
     )
     design_text = st.text_area("Pasted design", height=200)
     if design_text.strip():
         is_raw_alts = looks_like_raw_alternatives(design_text)
-        st.caption("Detected shape: " + ("Raw Alternatives (deterministic parse)" if is_raw_alts else "Questionnaire cards (Claude-assisted parse)"))
+        st.caption("Detected shape: " + ("Raw Alternatives (fast parse)" if is_raw_alts else "Questionnaire cards (AI-assisted parse)"))
         if st.button("Parse design"):
             try:
                 if is_raw_alts:
                     design = parse_design(design_text)
                 else:
-                    if not api_key:
-                        st.error("An API key is required to parse Questionnaire-card text.")
-                    else:
-                        client = make_client(api_key)
-                        design = parse_design(design_text, client=client, model=MODEL_MAP["haiku"])
+                    client = make_client(api_key)
+                    design = parse_design(design_text, client=client, model=MODEL_MAP["haiku"])
                 st.session_state["parsed_design"] = design
             except (ValueError, RuntimeError) as e:
                 st.error(f"Could not parse design: {e}")
@@ -300,13 +396,12 @@ step_header(4, "Persona sampling")
 persona_base = load_persona_base()
 all_provinces = sorted(persona_base["province"].unique())
 
-col1, col2 = st.columns(2)
-n_respondents = col1.number_input("Number of respondents", min_value=3, value=100, step=1)
-stratify = col2.checkbox("Stratify by urban/rural x expenditure quintile (recommended)", value=True)
+n_respondents = st.number_input("Number of respondents", min_value=3, value=100, step=1)
+stratify = st.checkbox("Stratify by urban/rural × expenditure quintile (recommended)", value=True)
 
 st.markdown(
     '<div style="font-family:\'Iowan Old Style\',\'Palatino Linotype\',Georgia,serif;'
-    'font-size:1.05rem;font-weight:700;color:var(--spa-ink);margin:18px 0 8px;">'
+    'font-size:1.05rem;font-weight:700;color:#1E2A3A;margin:18px 0 8px;">'
     "Geographic scope</div>",
     unsafe_allow_html=True,
 )
@@ -332,7 +427,7 @@ elif scope_type == "District":
     ]
     label_to_code = dict(zip(district_labels, district_options["district_code"]))
     selected_labels = st.multiselect(
-        "District(s)/city(-ies) -- e.g. 'Kota Bandung' vs 'Kabupaten Bandung' are distinct",
+        "District(s)/city(-ies) — e.g. 'Kota Bandung' vs 'Kabupaten Bandung' are distinct",
         options=district_labels,
     )
     district_codes = [label_to_code[label] for label in selected_labels]
@@ -342,29 +437,22 @@ step_header(5, "Generate")
 
 model_choice = st.radio(
     "Model", options=["haiku", "sonnet"], index=0, horizontal=True,
-    help="Haiku: fast/cheap default. Sonnet: higher quality, more expensive.",
+    help="Haiku: fast default. Sonnet: higher quality responses.",
 )
 model = MODEL_MAP[model_choice]
 
-ready = bool(api_key)
 if method.startswith("SB-DC") or method.startswith("DB-DC"):
-    ready = ready and "{BID}" in context and bid_levels
+    ready = bool(bid_levels) and "{BID}" in context
 else:
-    ready = ready and design is not None
+    ready = design is not None
 
 if scope_type == "Province" and not provinces:
-    st.warning("Province scope is selected but no province is chosen -- pick at least one, or switch to National.")
+    st.warning("Province scope is selected but no province is chosen — pick at least one, or switch to National.")
     ready = False
 elif scope_type == "District" and not district_codes:
-    st.warning("District scope is selected but no district is chosen -- pick at least one, or switch to National.")
+    st.warning("District scope is selected but no district is chosen — pick at least one, or switch to National.")
     ready = False
 
-# Generation runs in a background thread with a cancellation flag, because
-# Streamlit executes one script run synchronously per interaction -- a plain
-# `for` loop here would block the whole app and a "Cancel" click wouldn't be
-# processed until the loop finished on its own. Instead: start a thread, then
-# do short poll-and-rerun cycles so the script keeps returning control to
-# Streamlit (and can therefore notice a Cancel click) between polls.
 gen_active = st.session_state.get("gen_thread") is not None
 
 if st.button("Generate synthetic responses", disabled=not ready or gen_active, type="primary"):
@@ -385,11 +473,6 @@ if st.button("Generate synthetic responses", disabled=not ready or gen_active, t
         progress_state["total"] = total
 
     def worker():
-        # A background thread's unhandled exception is silently swallowed by
-        # Python (printed to stderr, never raised in the main thread) -- without
-        # this try/except, a genuine API/network failure here would leave
-        # result_holder empty and crash the polling code below with a
-        # confusing KeyError instead of a real error message.
         try:
             if method.startswith("SB-DC"):
                 res = generate_sbdc_responses(
@@ -407,7 +490,7 @@ if st.button("Generate synthetic responses", disabled=not ready or gen_active, t
                     progress_callback=progress_cb, cancel_event=cancel_event,
                 )
             result_holder["results"] = res
-        except Exception as e:  # noqa: BLE001 - genuinely want to surface any failure to the UI thread
+        except Exception as e:  # noqa: BLE001
             result_holder["exception"] = str(e)
 
     thread = threading.Thread(target=worker, daemon=True)
@@ -429,7 +512,7 @@ if gen_active:
         st.progress(done / total, text=f"Generating... {done}/{total}")
         if st.button("Cancel"):
             cancel_event.set()
-            st.info("Cancelling -- finishing the respondent currently in progress, then stopping.")
+            st.info("Cancelling — finishing the respondent currently in progress, then stopping.")
         time.sleep(0.5)
         st.rerun()
     else:
@@ -449,9 +532,7 @@ if gen_active:
                     len(result_holder["results"]), progress_state["total"]
                 )
         else:
-            # Thread ended without setting either key -- shouldn't happen given
-            # the worker's own try/except, but fail loud rather than KeyError.
-            st.session_state["gen_last_error"] = "Generation thread ended unexpectedly with no result and no captured exception."
+            st.session_state["gen_last_error"] = "Generation ended unexpectedly with no result."
         st.rerun()
 
 if st.session_state.get("gen_last_error"):
@@ -460,28 +541,18 @@ if st.session_state.get("gen_last_error"):
 
 if st.session_state.get("gen_last_cancelled_partial"):
     done, total = st.session_state["gen_last_cancelled_partial"]
-    st.warning(f"Cancelled -- {done} of {total} respondent(s) completed before stopping.")
+    st.warning(f"Cancelled — {done} of {total} respondent(s) completed before stopping.")
     st.session_state["gen_last_cancelled_partial"] = None
 
 # ── Results ────────────────────────────────────────────────────────────────────
 if "results" in st.session_state:
     results = st.session_state["results"]
-    step_header("&#10003;", "Results")
+    results_header()
 
     n_errors = results["error"].notna().sum()
-    total_input_tokens = results["input_tokens"].sum()
-    total_output_tokens = results["output_tokens"].sum()
-    approx_cost = (
-        total_input_tokens / 1_000_000 * 1.0 + total_output_tokens / 1_000_000 * 5.0
-        if model == MODEL_MAP["haiku"]
-        else total_input_tokens / 1_000_000 * 3.0 + total_output_tokens / 1_000_000 * 15.0
-    )
-
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Respondents", len(results))
+    c1, c2 = st.columns(2)
+    c1.metric("Respondents generated", len(results))
     c2.metric("Errors", int(n_errors))
-    c3.metric("Tokens (in/out)", f"{total_input_tokens:,}/{total_output_tokens:,}")
-    c4.metric("Approx. cost (USD)", f"${approx_cost:.3f}")
 
     if st.session_state["results_method"].startswith("SB-DC"):
         toolbox_ready = results[["Y", "Bid"] + [c for c in results.columns if c not in
