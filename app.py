@@ -86,6 +86,14 @@ st.markdown(
       padding: 22px 26px 22px;
       margin-bottom: 20px;
     }
+    .spa-hero-inner {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .spa-hero-body { flex: 1; min-width: 0; }
+    .spa-hero-logo { flex: none; display: flex; align-items: center; padding-top: 4px; }
     .spa-hero .eyebrow {
       font-family: Consolas, "SF Mono", monospace;
       font-size: 12px;
@@ -107,6 +115,19 @@ st.markdown(
       max-width: 76ch;
       margin: 0 0 16px;
       line-height: 1.5;
+    }
+    @media (max-width: 600px) {
+      .spa-hero { padding: 14px 14px 16px; }
+      .spa-hero-inner {
+        flex-direction: column-reverse;
+        gap: 14px;
+      }
+      .spa-hero h1 { font-size: 1.45rem; }
+      .spa-hero .eyebrow { font-size: 10px; }
+      .spa-hero p { font-size: 14px; }
+      .spa-hero-logo img { height: 52px !important; width: 52px !important; }
+      .spa-tools { gap: 7px; }
+      .spa-tool span { font-size: 11px; }
     }
     .spa-tools {
       display: flex;
@@ -278,7 +299,7 @@ _logo_html = (
 
 _tools_html = (
     '<div class="spa-tools">'
-    '<span class="label">CVMToolbox &nbsp;&middot;&nbsp; Valuation Toolbox</span>'
+    '<span class="label">Excel Addins &nbsp;&middot;&nbsp; Valuation Toolbox</span>'
     + _tool_badge(_SVG_SBDC, "SB-DC")
     + _tool_badge(_SVG_DBDC, "DB-DC")
     + _tool_badge(_SVG_OADESIGN, "OA-Design")
@@ -289,19 +310,21 @@ _tools_html = (
 
 st.markdown(
     f"""
-    <div class="spa-hero" style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;">
-      <div style="flex:1;min-width:0;">
-        <div class="eyebrow">SUSENAS &times; Claude &middot; synthpersona</div>
-        <h1>Synthetic Persona Survey Responses</h1>
-        <p>Simulate how Indonesian households would respond to your CVM or DCE survey &mdash;
-        grounded in real SUSENAS microdata and powered by AI. Draw demographically
-        representative personas from any province or district, describe your scenario,
-        and receive a ready-to-analyse dataset of synthetic responses shaped to paste
-        directly into CVMToolbox.</p>
-        {_tools_html}
-      </div>
-      <div style="flex:none;display:flex;align-items:center;padding-top:4px;">
-        {_logo_html}
+    <div class="spa-hero">
+      <div class="spa-hero-inner">
+        <div class="spa-hero-body">
+          <div class="eyebrow">SUSENAS &times; Claude &middot; synthpersona</div>
+          <h1>Synthetic Persona Survey Responses</h1>
+          <p>Simulate how Indonesian households would respond to your CVM or DCE survey &mdash;
+          grounded in real SUSENAS microdata and powered by AI. Draw demographically
+          representative personas from any province or district, describe your scenario,
+          and receive a ready-to-analyse dataset of synthetic responses shaped to paste
+          directly into CVMToolbox.</p>
+          {_tools_html}
+        </div>
+        <div class="spa-hero-logo">
+          {_logo_html}
+        </div>
       </div>
     </div>
     """,
@@ -311,7 +334,7 @@ st.markdown(
 # ── Step 1: method selection ──────────────────────────────────────────────────
 step_header(1, "Survey method")
 method = st.radio(
-    "Method", options=["SB-DC (single-bounded CVM)", "DB-DC (double-bounded CVM)", "DCE"],
+    "Method", options=["SB-DC (single-bounded)", "DB-DC (double-bounded)", "DCE"],
     horizontal=True,
 )
 
@@ -350,9 +373,8 @@ if method.startswith("SB-DC"):
 elif method.startswith("DB-DC"):
     bid_text = st.text_input("Initial (Bid1) levels (comma-separated, Rp)", value="10000, 20000, 35000, 60000, 100000")
     bid_levels = [float(x.strip()) for x in bid_text.split(",") if x.strip()]
-    col1, col2 = st.columns(2)
-    up_multiplier = col1.number_input("Follow-up multiplier if 'Ya' (Bid2 = Bid1 x this)", value=2.0, min_value=1.01)
-    down_multiplier = col2.number_input("Follow-up multiplier if 'Tidak' (Bid2 = Bid1 x this)", value=0.5, max_value=0.99)
+    up_multiplier = st.number_input("Follow-up multiplier if 'Ya'  (Bid2 = Bid1 × this)", value=2.0, min_value=1.01)
+    down_multiplier = st.number_input("Follow-up multiplier if 'Tidak'  (Bid2 = Bid1 × this)", value=0.5, max_value=0.99)
     st.caption(f"{len(bid_levels)} initial bid level(s), rotated evenly across respondents.")
 
 else:  # DCE
@@ -407,7 +429,7 @@ st.markdown(
 )
 scope_type = st.radio(
     "Scope",
-    options=["National (all Indonesia)", "Province", "District"],
+    options=["National", "Province", "District"],
     horizontal=True,
 )
 
@@ -447,10 +469,10 @@ else:
     ready = design is not None
 
 if scope_type == "Province" and not provinces:
-    st.warning("Province scope is selected but no province is chosen — pick at least one, or switch to National.")
+    st.warning("Pick at least one province, or switch scope to National.")
     ready = False
 elif scope_type == "District" and not district_codes:
-    st.warning("District scope is selected but no district is chosen — pick at least one, or switch to National.")
+    st.warning("Pick at least one district, or switch scope to National.")
     ready = False
 
 gen_active = st.session_state.get("gen_thread") is not None
