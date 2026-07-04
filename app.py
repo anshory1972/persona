@@ -170,9 +170,17 @@ except ValueError:
     api_key = None
 
 _logo_html = (
+    f'<div style="display:flex;align-items:center;gap:10px;flex-direction:row;">'
     f'<img src="data:image/png;base64,{_LOGO}" '
     f'alt="SDGs Center Universitas Padjadjaran" '
-    f'style="max-height:52px;max-width:260px;object-fit:contain;">'
+    f'style="height:64px;width:64px;object-fit:contain;flex:none;">'
+    f'<div style="font-family:\'Iowan Old Style\',\'Palatino Linotype\',Georgia,serif;'
+    f'line-height:1.25;text-align:left;">'
+    f'<div style="font-weight:700;font-size:13px;color:#1E2A3A;">SDGs Center</div>'
+    f'<div style="font-size:12px;color:#5C6B7A;">Universitas</div>'
+    f'<div style="font-size:12px;color:#5C6B7A;">Padjadjaran</div>'
+    f'</div>'
+    f'</div>'
     if _LOGO else ""
 )
 st.markdown(
