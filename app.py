@@ -334,7 +334,7 @@ st.markdown(
 # ── Step 1: method selection ──────────────────────────────────────────────────
 step_header(1, "Survey method")
 method = st.radio(
-    "Method", options=["SB-DC (single-bounded)", "DB-DC (double-bounded)", "DCE"],
+    "Method", options=["SB-DC (single-bounded) CVM", "DB-DC (double-bounded) CVM", "DCE (Discrete Choice Experiment)"],
     horizontal=True,
 )
 
