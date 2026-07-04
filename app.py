@@ -5,8 +5,10 @@ full design rationale.
 Run with: streamlit run app.py
 """
 
+import base64
 import threading
 import time
+from pathlib import Path
 
 import streamlit as st
 import pandas as pd
@@ -19,6 +21,14 @@ from cvm import generate_sbdc_responses, generate_dbdc_responses
 from dce import generate_dce_responses
 
 st.set_page_config(page_title="Synthetic Persona Survey Responses", layout="wide", page_icon="🗺️")
+
+def _logo_b64() -> str:
+    logo_path = Path(__file__).parent / "assets" / "logo.png"
+    if logo_path.exists():
+        return base64.b64encode(logo_path.read_bytes()).decode()
+    return ""
+
+_LOGO = _logo_b64()
 
 st.markdown(
     """
@@ -159,15 +169,26 @@ try:
 except ValueError:
     api_key = None
 
+_logo_html = (
+    f'<img src="data:image/png;base64,{_LOGO}" '
+    f'alt="SDGs Center Universitas Padjadjaran" '
+    f'style="max-height:52px;max-width:260px;object-fit:contain;">'
+    if _LOGO else ""
+)
 st.markdown(
-    """
-    <div class="spa-hero">
-      <div class="eyebrow">SUSENAS &times; Claude &middot; synthpersona</div>
-      <h1>Synthetic Persona Survey Responses</h1>
-      <p>Generate behaviorally plausible synthetic responses to CVM or DCE surveys, using
-      real SUSENAS-based Indonesian personas and Claude. Paste a design from CVMToolbox
-      (Excel add-in), or enter CVM bid levels directly &mdash; the output is shaped to
-      paste straight back into the toolbox.</p>
+    f"""
+    <div class="spa-hero" style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;">
+      <div style="flex:1;min-width:0;">
+        <div class="eyebrow">SUSENAS &times; Claude &middot; synthpersona</div>
+        <h1>Synthetic Persona Survey Responses</h1>
+        <p>Generate behaviorally plausible synthetic responses to CVM or DCE surveys, using
+        real SUSENAS-based Indonesian personas and Claude. Paste a design from CVMToolbox
+        (Excel add-in), or enter CVM bid levels directly &mdash; the output is shaped to
+        paste straight back into the toolbox.</p>
+      </div>
+      <div style="flex:none;display:flex;align-items:center;padding-top:4px;">
+        {_logo_html}
+      </div>
     </div>
     """,
     unsafe_allow_html=True,
